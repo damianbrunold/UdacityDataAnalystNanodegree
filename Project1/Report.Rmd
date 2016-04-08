@@ -1,0 +1,204 @@
+---
+title: "Statistics - The Stroop Effect"
+author: "Damian Brunold"
+date: "22\\. Dezember 2015"
+output: pdf_document
+---
+
+## Introduction
+
+The Stroop Effect is a famous psychology effect, that was first published
+in 1929 in Germany and first published in english in 1935 by John
+Ridley Stroop.[1]
+
+The experiment works as follows: the subject is shown a list of words 
+of colors, e.g. 'red', printed in colored inks. He or she has to name the color 
+of the ink used to print each word. The time used is measured.
+
+There are two conditions: the first one is named 'congruent' and here the 
+color of the ink and the color denoted by the word match, i.e. the word 
+'red' is shown in red ink, the word 'green' is shown in green ink.
+
+For example:
+<span style="color: red">red</span>
+<span style="color: green">green</span>
+<span style="color: blue">blue</span>
+
+The second condition is called 'incongruent'. Here, the color of the ink
+and the color denoted by the word do not match, e.g. 'red' is shown in blue 
+ink.
+
+For example:
+<span style="color: red">blue</span>
+<span style="color: green">red</span>
+<span style="color: blue">green</span>
+
+The result of the experiment is that the time needed to complete the task 
+is higher for the incongruent condition than for the congruent condition.
+
+## Overview
+
+The *independent variable* is the condition (congruent or incongruent word 
+condition). The *dependent variable* is the time needed to complete 
+the task.
+
+*Null hypothesis:* The population mean of the time needed to complete 
+the task is the same for congruent and incongruent word conditions.
+
+$H_0: \mu_C = \mu_I$
+
+*Alternative hypothesis:* The population mean of the time to complete 
+the task is different for congruent and incongruent word conditions.
+
+$H_{1}: \mu_C \neq \mu_I$
+
+where $\mu_C$ is the population mean in case of the
+congruent condition and $\mu_I$ is the population mean 
+in case of the incongruent condition.
+
+We have two samples, one for each condition, and want to test whether there is a statistically significant difference between the means of the populations the
+samples are taken from.
+
+Since we do not know the population standard deviation of either the congruent
+or the incongruent condition we cannot use the *z-test*. Also, we only have
+24 observations whereas a *z-test* generally requires at least 30 observations.
+
+From the experimental situation (independent, scalar observations) we
+can assume that the distributions likely are normal. We will strengthen this
+assumption by plotting a histogram of the distributions of our samples.
+
+These considerations leads us to propose using the *t-test*. Since we 
+do not know whether any difference would be 
+positive or negative, we perform a two-sided t-test. And since we have paired
+values (for each subject one for congruent and one value for incongruent), we
+can perform a paired (dependent) t-test.
+
+We choose as *significance level* $\alpha = 0.05$.
+
+## Loading the data
+
+First, we read the CSV file with the data.
+
+```{r}
+df <- read.csv("stroopdata.csv")
+```
+
+The data is clean and tidy and we do not have to do any
+data wrangling.
+
+## A first look at the data
+
+```{r}
+str(df)
+```
+
+As we see, we have 24 observations with numerical values for both
+conditions.
+
+Lets look at the summary of the data, providing quartiles, median and mean:
+
+```{r}
+summary(df)
+```
+
+The standard deviations are
+
+```{r}
+sd(df$Congruent)
+```
+
+```{r}
+sd(df$Incongruent)
+```
+
+Let us look at the boxplots of the two samples including the means (red crosses)
+
+```{r echo=FALSE}
+par(mfcol = c(1, 2))
+boxplot(df$Congruent, ylim = c(8, 36), main = "Congruent", ylab = "Seconds [s]")
+points(1, mean(df$Congruent), pch = 4, col = "red")
+boxplot(df$Incongruent, ylim = c(8, 36), main = "Incongruent", ylab = "Seconds [s]")
+points(1, mean(df$Incongruent), pch = 4, col = "red")
+```
+
+Although both distributions have comparable spread, the incongruent 
+one has some high outliers and is clearly shifted towards higher times.
+
+The following shows the histograms of the two distributions to
+get a picture of the detailed distribution of values.
+
+```{r echo=FALSE}
+par(mfcol = c(2, 1))
+hist(df$Congruent,
+     breaks = 8,
+     xlim = c(7, 37), 
+     ylim = c(0, 12), 
+     main = "Congruent",
+     xlab = "Seconds [s]")
+hist(df$Incongruent,
+     breaks =  8,
+     xlim = c(7, 37), 
+     ylim = c(0, 13), 
+     main = "Incongruent",
+     xlab = "Seconds [s]")
+```
+
+Both distributions look roughly normal or at least not skewed.
+
+## Performing the t-test
+
+Now it is time to actually perform the t-test. Since we are interested in
+the difference in means, regardless whether positive or negative, we choose
+the *two.sided* test. Since each observation of congruent and incongruent
+conditions is from one person, we set *paired = TRUE*.
+
+```{r}
+t.test(x = df$Congruent, y = df$Incongruent, alternative = "two.sided", paired = TRUE)
+```
+
+The *t-statistic* is $-8.0207$ and the *p-value* is way below $\alpha = 0.05$. 
+Since the *critical t-value* is
+
+```{r}
+qt(p = 0.025, df=23)
+```
+
+we have *t-statistic < critical-t-value*. Thus we can reject the null hypothesis.
+
+The $95\%$ confidence interval of the difference between the means is 
+approximately $[-10.02, -5.91]$.
+
+## Conclusion
+
+Thus we can conclude that the mean time for the incongruent condition
+is different from the mean time for the congruent condition at significance
+level $\alpha = 0.05$.
+
+## Remarks about potential causes
+
+According to [1] and [2], there are several theories about the cause of
+this effect.
+
+One popular theory is the so-called *automaticity model*.
+According to this theory, the reading of words is hard-wired and automatic
+while the recognition of colors is not automatic and requires effort.
+
+A second theory suggests that reading words is not automatic, but faster than recognizing colors, thus the reading wins and makes recognition of the colors
+in the incongruent case more difficult. This theory is called 
+the *speed of processing model*.
+
+One possible variation of the experiment is as follows: replace the words of
+colors with words of objects related to colors. For example, sky is related
+to blue, snow related to white, fire related to red or yellow and so on.
+Thus in the congruent version, the word snow would be printed white (presumably
+on gray background) and the word sky would use blue ink. In the incongruent
+version, the word sky would maybe use the red ink.
+
+## References
+
+The following references were used for background information about the
+Stroop Effect.
+
+[1] https://en.wikipedia.org/wiki/Stroop_effect
+
+[2] https://www.rit.edu/cla/gssp400/sbackground.html

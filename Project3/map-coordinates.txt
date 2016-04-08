@@ -1,0 +1,6 @@
+Approximate coordinates of selected map:
+
+north: 47.2811
+west:   8.4457
+east:   8.7314
+south: 47.1617
