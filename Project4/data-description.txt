@@ -1,0 +1,41 @@
+The jbead_full.csv file contains data about the usage of
+the jbead program. This program is used to design bead
+crochet ropes and can be downloaded for free from
+www.jbead.ch
+
+Each time the application is started, it checks whether
+there is a newer version available. If it is, then the
+user is prompted to install and use the newer version.
+
+This update check is logged in the web server access
+log. I took the data from the years 2013 through 2015
+(i.e. three full years), cleaned the data and resolved
+the ip data to geographic information. This clean and
+tidy data set was used for the project.
+
+The following is a description of the columns contained
+in the csv file.
+
+The file uses the UTF-8 encoding.
+
+"timestamp"			Timestamp of version check in CET
+"ip"				The IP address of the user
+"version"			The version of jbead used by the user
+"locale"			The locale of the computer of the user
+"javaversion"		The java version of the user
+"os"				The name of the operating system 
+"osversion"			The version of the operating system
+"arch"				The architecture of the computer
+"osmajor"			The base name of the os (i.e. Windows, Mac, Linux)
+"javamajor"			The major java version (5, 6, 7, 8, 9)
+"released"			The release date of the java version, if available
+"expired"			The expiration date of the java versino, if available
+"timezone"			The timezone of the user
+"lat"				The geographical latitude
+"lon"				The geographical longitue
+"zip"				The zip code
+"country"			The country name
+"countryCode"		The ISO country code
+"city"				The city
+"regionName"		The name of the region
+"tz.offset"			The offset of the timezone in (fractional) hours from GMT

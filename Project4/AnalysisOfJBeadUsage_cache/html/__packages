@@ -1,0 +1,11 @@
+base
+ggplot2
+stringr
+tidyr
+dplyr
+plyr
+lubridate
+gridExtra
+ggmap
+maps
+mapdata

@@ -1,0 +1,595 @@
+---
+title: "Analysis of JBead Usage"
+author: "Damian Brunold"
+date: "2016-04-13"
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+# Introduction
+
+JBead is an open source program for designing crocheted bead
+ropes. You can find information about the program at 
+http://www.jbead.ch/.
+
+Every time the program starts, it checks for updates by sending
+a short request to the jbead.ch webserver. These requests contain
+some information about the equipment of the users, for example
+the java version used, the brand, make and version of the operating
+system used etc. These requests get stored in the access log of
+the webserver.
+
+I extracted three full years (2013 through 2015) of these data,
+cleaned them up a little bit and augmented them with some additional
+information about e.g. the location of the user as indicated by the
+IP address used.
+
+It is worth to note, that these requests do not contain any personally
+identifiable data except perhaps for the IP address. In addition,
+the user can choose to disable these update checks and thus use the
+program without leaving any data trail behind.
+
+As each request corresponds to a program start, the request can serve
+as a proxy for usage of the program. It is not entirely accurate,
+since some users might leave the program running for days and weeks
+on end and others might open it a dozen times in a few times, e.g.
+when searching through a set of pattern files. Nontheless, this 
+information is the best usage data I have and it is quite interesting
+as is.
+
+# Analysis
+
+## Preparation
+
+```{r message=FALSE}
+library(ggplot2)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(lubridate)
+library(gridExtra)
+library(ggmap)
+library(maps)
+library(mapdata)
+```
+
+The data is provided in a single, tidy csv file. We load it,
+convert the timestamp to a datetime value and take a glimpse
+of the data.
+
+```{r cache=TRUE}
+# read data
+data <- read.csv("jbead.csv", encoding = "UTF-8")
+# convert date columns to correct datatype
+data$timestamp <- ymd_hms(data$timestamp)
+data$released <- ymd(data$released)
+data$expired <- ymd(data$expired)
+glimpse(data)
+```
+
+We have 20 variables and 389671 observations.
+
+Let us create some tables to get a first impression of the data.
+
+```{r}
+table(data$version)
+table(data$arch)
+table(data$osmajor)
+table(data$javamajor)
+table(data$countryCode)
+```
+
+## Application Usage Counts
+
+In order to analyze usage counts, we add day and week
+columns. This allows us to group the data according
+to day and week. We also generate a year column in
+order to do facetting according to year.
+
+```{r}
+# add columns for day of year, week and year
+data <- mutate(data, day = yday(timestamp))
+data <- mutate(data, week = week(timestamp))
+data <- mutate(data, year = factor(year(timestamp)))
+```
+
+Now we generate a first overview of the three years.
+
+```{r}
+yearly <- dplyr::summarize(group_by(data, year), count = n())
+ggplot(yearly, aes(x = as.numeric(year), y = count)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+We see that the usage of the application is clearly
+increasing across the three years.
+
+```{r}
+y1 <- nrow(data[data$year == 2013,])
+y2 <- nrow(data[data$year == 2014,])
+y3 <- nrow(data[data$year == 2015,])
+increase_y1_y2 <- 100 / y1 * y2
+increase_y2_y3 <- 100 / y2 * y3
+```
+
+In the first year, the application was used `r y1`
+times. In the second year it was `r y2` and in the
+third year, it was `r y3`. So the year-over-year
+increase from 2013 to 2014 was +`r round(increase_y1_y2) - 100`%
+and the increase from 2014 to 2015 was +`r round(increase_y2_y3) - 100`%.
+
+How about the time series of the three years?
+
+```{r}
+daily  <- dplyr::summarize(group_by(data, year, week, day), count = n())
+ggplot(daily, aes(x = day, y = count, col = year)) + 
+  geom_line() +
+  geom_smooth()
+```
+
+The average of daily counts for 2013 is `r mean(daily[daily$year==2013,]$count)`,
+for 2014 `r mean(daily[daily$year==2014,]$count)` and for 2015 
+`r mean(daily[daily$year==2015,]$count)`.
+
+By looking at weekly groups instead of daily ones, we get
+a less noisy picture.
+
+```{r}
+weekly  <- dplyr::summarize(group_by(data, year, week), count = n())
+ggplot(weekly, aes(x = week, y = count, col = year)) + 
+  geom_line() +
+  geom_smooth()
+```
+
+There seems to be a clear year to year increase in usage of the
+application.
+
+Finally, lets look at the full three year period.
+
+```{r}
+data <- mutate(data, dailyfull = ymd(paste(year, 
+                                           month(timestamp), 
+                                           day(timestamp))))
+dailyfull  <- dplyr::summarize(group_by(data, dailyfull), count = n())
+ggplot(dailyfull, aes(x = dailyfull, y = count)) + 
+  geom_line() +
+  geom_smooth()
+```
+
+The median daily count is `r median(dailyfull$count)`.
+
+Lets do a scatter plot of weekly count from 2015 versus 2014 and so on.
+
+```{r}
+# function for selecting a specific year of weekly data set
+weekly_year <- function(y) {
+  subset(weekly, year == y)
+}
+# function for plotting comparison between weekly counts for two years
+plot_year_comparison <- function(year1, year2) {
+  qplot(x = weekly_year(year1)$count,
+        y = weekly_year(year2)$count) +
+    xlab(year1) +
+    ylab(year2) +
+    coord_cartesian(xlim = c(1500, 4000), ylim=c(1500, 4000)) +
+    geom_abline(slope = 1, intercept = 0)
+}
+plot_year_comparison(2013, 2014)
+plot_year_comparison(2014, 2015)
+```
+
+Since the points are mostly above the line, we clearly see that the counts
+are increasing from year to year.
+
+Can we find out how the distribution in usage is for different
+days of the week?
+
+```{r}
+data <- mutate(data, dayofweek = wday(timestamp))
+dayofweek  <- dplyr::summarize(group_by(data, year, dayofweek), count = n())
+ggplot(dayofweek, aes(x = dayofweek, y = count, col = year)) + 
+  geom_point(size = 6) +
+  scale_x_continuous(breaks = seq(1, 7, 1), 
+                     limits = c(1, 7),
+                     labels = c("Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"))
+```
+
+The application is most used on sundays. 
+
+```{r}
+chisq.test(subset(dayofweek, year == 2013, select = count))
+chisq.test(subset(dayofweek, year == 2014, select = count))
+chisq.test(subset(dayofweek, year == 2015, select = count))
+```
+
+The chi-square test shows that there is a significant difference between
+the days of weeks.
+
+This analysis is to be taken with a grain of salt, because the datetimes
+are in CET. So if a user in australia uses the application on sunday, it
+might be still saturday in europe. In order to account for this, it would
+be necessary to convert the datetimes into the local timezone.
+
+Let us have a look at the distribution accross timezones. We start with
+the most common 20 timezones.
+
+```{r}
+timezone  <- dplyr::summarize(group_by(data, timezone), count = n())
+timezone$timezone <- factor(timezone$timezone, 
+                            levels = names(table(timezone$timezone))[
+                              order(timezone$count, decreasing = F)])
+tz20 <- head(timezone[order(timezone$count, decreasing=TRUE),], n = 20)
+ggplot(tz20, aes(x = count, y = timezone)) + 
+  geom_point(size = 6)
+```
+
+The timezones vary widely: mostly european, but also american (east and west).
+So it clearly would be beneficial, if we adjusted the timestamp according to
+timezone.
+
+As we have access to the timezone offset in the variable tz.offset, we
+can create a local timestamp (this does not take daylight saving into 
+account).
+
+```{r}
+data <- mutate(data, tslocal = timestamp + tz.offset * 3600)
+data <- mutate(data, hour = hour(tslocal))
+```
+
+Now let us see at which hours of the day users are using the application.
+
+```{r}
+ggplot(data, aes(x = hour)) +
+  geom_histogram(binwidth = 1)
+```
+
+We clearly see that most people do not work with the application
+during the night. The peak is in the evening.
+
+```{r}
+hourly  <- dplyr::summarize(group_by(data, hour), count = n())
+chisq.test(hourly$count)
+```
+
+The chi-square test does confirm that the hourly usage is not
+evenly distributed.
+
+Next, I want to take a look at the distribution of the users
+on the world map.
+
+```{r}
+world <- map_data("world")
+ggplot() + 
+  geom_polygon(data = world, aes(x=long, y=lat, group=group)) + 
+  coord_fixed(1.3) +
+  geom_point(data = data, aes(x = lon, y = lat), 
+             color = "red", 
+             size = 1, 
+             alpha = 0.3)
+```
+
+Lets differentiate the major os versions used. We take only 2015
+for this.
+
+```{r}
+ggplot() + 
+  geom_polygon(data = world, aes(x=long, y=lat, group=group)) + 
+  coord_fixed(1.3) +
+  geom_point(data = subset(data, month(timestamp) == 12 & year == 2015), 
+             aes(x = lon, y = lat, col = osmajor), 
+             size = 3, 
+             alpha = 0.3)
+```
+
+The mac seems to be mostly found in the USA. Linux is scarce but seemingly
+in the eastern part of europe and russia and in australia.
+
+Only look at windows:
+
+```{r}
+ggplot() + 
+  geom_polygon(data = world, aes(x=long, y=lat, group=group)) + 
+  coord_fixed(1.3) +
+  geom_point(data = subset(data, month(timestamp) == 12 & year == 2015 & str_sub(os, 1, 3) == "Win"), 
+             aes(x = lon, y = lat, col = os), 
+             size = 3, 
+             alpha = 0.3)
+```
+
+Look at the java versions:
+
+```{r}
+ggplot() + 
+  geom_polygon(data = world, aes(x=long, y=lat, group=group)) + 
+  coord_fixed(1.3) +
+  geom_point(data = subset(data, month(timestamp) == 12 & year == 2015), 
+             aes(x = lon, y = lat, col = factor(javamajor)), 
+             size = 3, 
+             alpha = 0.3)
+```
+
+Lets delve deeper into other variables. For example the operating
+system used.
+
+```{r}
+data <- mutate(data, monthlyfull = ymd(paste(year, month(timestamp), "1")))
+osmajor  <- dplyr::summarize(group_by(data, monthlyfull, osmajor), count = n())
+ggplot(osmajor, aes(x = monthlyfull, y = count, col = osmajor)) +
+  geom_line()
+```
+
+How about proportions?
+
+```{r}
+ggplot(osmajor, aes(x = monthlyfull, y = count, fill = osmajor)) +
+  geom_area(position = "fill")
+```
+
+Lets see the versions of windows
+
+```{r}
+os  <- dplyr::summarize(group_by(data, monthlyfull, os), count = n())
+ggplot(os, aes(x = monthlyfull, y = count, fill = os)) +
+  geom_area(position = "fill")
+```
+
+Only consider windows
+
+```{r}
+win <- subset(os, str_sub(os, 1, 3) == "Win")
+ggplot(win, aes(x = monthlyfull, y = count, fill = os)) +
+  geom_area(position = "fill")
+```
+
+Might need a better color scheme and a more logical ordering
+of the os factor to get a better overview.
+
+Lets do the same for computer architectures
+
+
+```{r}
+arch  <- dplyr::summarize(group_by(data, monthlyfull, arch), count = n())
+x64 <- sum(arch[arch$arch == 'x64',]$count) / sum(arch$count)
+ggplot(arch, aes(x = monthlyfull, y = count, fill = arch)) +
+  geom_area(position = "fill") +
+  geom_abline(slope = 0, intercept = x64)
+```
+
+We see that in the mean, `r round(x64*100)`% of the usage is done using an 64bit system.
+
+Most users seem to use 32bit architectures. This is curious, I would
+have expected to see an increase in 64bit architectures.
+
+Now what about the used java versions? Lets just look at the major
+versions.
+
+```{r}
+javamajor  <- dplyr::summarize(group_by(data, monthlyfull, javamajor), 
+                               count = n())
+javamajor <- na.omit(javamajor)
+ggplot(javamajor, aes(x = monthlyfull, y = count, fill = factor(javamajor))) +
+  geom_area(position = "fill")
+```
+
+We see an aggressive push to java 8 starting in mid 2014. Still, a rather
+large proportion of users seem to use java 6, a long obsolete version.
+
+It would be interesting to investigate the relationship of java version and
+operating system.
+
+```{r}
+ggplot(data, aes(x = osmajor, fill = factor(javamajor))) +
+  geom_bar(position = "fill")
+```
+
+We see that the Mac has a very high proportion of java 6 users. The reason
+is probably, that for a long time, java 6 was the only java available for
+the Mac.
+
+Next I am interested in the staleness of the java versions
+used. What do I mean by that? Due to bug fixes and fixes for
+security issues there are periodically new versions of java.
+As soon as the patch version of java is available, the previous
+one is considered stale, because it is not up to date.
+
+Especially because of frequent security issues this topic is
+highly interesting. Earlier on, java was known for its lax
+upgrade policies. In recent time, the java installation contains
+an upgrade component which is quite aggressive in upgrading java
+to more recent versions.
+
+In order to analyze this topic, I already collected release dates
+of every java version. This also yielded the expiration dates of
+java versions by shifting the release dates by one entry. The
+data frame does contain the columns 'released' and 'expired'. Since
+we are interested in staleness, we use the 'expired' column to
+calculate the number of days the user uses a java version since
+it expired.
+
+```{r}
+data <- na.omit(data)
+data$staleness <- as.numeric(julian(data$timestamp) - julian(data$expired))
+```
+
+If staleness is negative then the java version is still current.
+Otherwise, a newer version is available.
+
+Lets see how the distribution is between stale and fresh java
+installations.
+
+```{r}
+data$status <- "fresh"
+data$status[data$staleness > 0] = "stale"
+data$status <- factor(data$status)
+ggplot(data, aes(x = javamajor, fill = status)) + geom_bar()
+```
+
+We see that the proportion of stale java installations is highest
+for java 6 and best for java 8. This confirms the more aggressive
+update policy in newer versions.
+
+```{r}
+monthlystaleness <- dplyr::summarize(group_by(data, javamajor, monthlyfull), 
+                                     meanstaleness = mean(staleness))
+monthlystaleness <- monthlystaleness[monthlystaleness$javamajor != 5,]
+ggplot(data = monthlystaleness, aes(x = monthlyfull, 
+                                    y = meanstaleness, 
+                                    color = factor(javamajor))) +
+  geom_line()
+```
+
+I excluded java 5 since there are only about 260 rows for it and the graph 
+does consequently look very ragged and does not convey much information. In 
+any case is java 5 long ago obsolete.
+
+The mean staleness over the whole period for java 6 is 
+`r mean(data[data$javamajor == 6,]$staleness)` days and 
+for java 7 `r mean(data[data$javamajor == 7,]$staleness)` days 
+and finally for java 8 `r mean(data[data$javamajor == 8,]$staleness)` days.
+
+Lets explore some further relationships.
+
+First, lets see how the timezone offsets are related to the longitudes:
+
+```{r}
+ggplot(data, aes(x = tz.offset, y = lon)) + geom_point()
+```
+
+As expected, there is a clear correlation (`r cor(data$tz.offset, data$lon)`)
+but we also clearly see that a bunch of longitudes are bundled into one
+timezone. Of course, this is the whole ideas of timezone, but we see it here
+nicely in this plot.
+
+Also visible is a strange outlier in the right bottom corner.
+
+```{r}
+head(data[data$tz.offset > 10 & data$lon < -100,])
+```
+
+As it turns out, this is a place called Egvekinot and it is located to the far
+east of siberia in russia. In fact, it is so much to the east, that is longitude
+is almost wrapping around. This means in the plot, it belongs to the data in the
+upper right corner or the lower left corner.
+
+
+
+# Final Plots
+
+## World wide usage distribution
+
+```{r fig.width=12, fig.height=12}
+dec15 <- subset(data, month(timestamp) == 12 & year == 2015)
+ggplot() +
+  ggtitle("Jbead usage in December 2015") +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  geom_polygon(data = world, aes(x=long, y=lat, group=group)) + 
+  coord_fixed(1.3) +
+  geom_point(data = dec15, 
+               aes(x = lon, y = lat, col = osmajor), 
+               size = 2, 
+               alpha = 0.3) +
+  facet_wrap(~osmajor, ncol = 1) +
+  theme(legend.position="none")
+```
+
+The plots show the distribution of the usage of jbead in december 2015 for 
+the three major operating system Windows, Mac OS X and Linux. We see that
+linux is most heavily used in europe. The Mac is mostly used in europe and
+america with some clusters in the other continents. Windows is most used and
+spread across the globe.
+
+## Time series of major java versions proportions
+
+```{r}
+javamajor <- javamajor[order(javamajor$javamajor, decreasing = TRUE),]
+ggplot(javamajor, aes(x = monthlyfull, y = count, fill = factor(javamajor))) +
+  ggtitle("Proportion of used java versions over time") +
+  xlab("Date") +
+  ylab("Proportion") +
+  scale_fill_discrete(name = "Java") +
+  geom_area(position = "fill")
+```
+
+The plot shows the development of proportions of java versions used
+over time. The java 5 version (long ago obsolete) is barely noticeable,
+Java 6 decreased from almost 50% to about 20%. The most dramatic change
+was the switch from java 7 to java 8. This started in mid-2014. First the
+new java 8 only gained a little, but then its usage exploded and rose
+rapidly to more than 50%. At the end, it stabilized at about 65%.
+
+## Proportions of java versions per operating system
+
+```{r}
+ggplot(data, aes(x = osmajor, fill = factor(javamajor))) +
+  geom_bar(position = "fill") +
+  ggtitle("Java usage per operating system") +
+  xlab("Operating system") +
+  ylab("Proportion") +
+  scale_fill_discrete(name = "Java")
+```
+
+The plot shows for each of the three major operating systems the proportion of
+java versions used. For Linux the most used version is java 7. For the mac,
+there is a very tiny bit of java 5 and java 7, a little of java 8 but most
+usage happens with java 6. On windows java 7 has the lead, followed by java 8
+and finally java 6.
+
+# Reflection
+
+I was positively surprised with how little effort it was
+possible to collect and to augment and clean the data.
+
+One speed bump was the resolution of IP to geographical
+information. But I finally found a free service with high
+enough rate to convert all approx. 76'000 IPs to geo
+data in about ten minutes. I used python for accessing
+this service and for converting the output into a csv
+file.
+
+For the java version information, I got data from the
+"java version wiki" and put them into a hand-made csv
+file.
+
+For combining the base log and the ip geo information and
+the java version, I used R with plyr/join.
+
+When I implemented the version check in jbead, I was quite
+conscious of its power. I thought long about what information
+to include in the request. I did not want to collect to
+much personal information since this would be quite intrusive
+to the users. But I did want to collect some usage data because
+this would help me decide where to invest my scarce time
+resources. For example, if I find that only a miniscule number
+of users use the linux operating system, then maybe I could
+stop investing time for this version.
+
+I finally decided to collect version information about the os
+and java, since this was quite relevant for my development
+purposes.
+
+I never collected personally identifiable information except
+for the IP. I never used cookies or GUIDs or something like
+this. Had I done this, then I would have been able to extract
+usage profile based on single users.
+
+Nonetheless, the existing data is quite fascinating and allows
+for very interesting analyses. I was surprised by this. At 
+the beginning of the project, I was worried, that the data
+would be boring.
+
+First I did have some trouble adjusting the date and times
+according to local time zones. After some dead-ends, I found
+a simple solution: calculate the hour-offset for each timezone
+and simply add it to the timestamp to get local time.
+
+## Further work
+
+One idea maybe worth investigating further would be to have a
+more detailed look at the geographical data grouped according
+to continents, i.e americas, europe, asia, ...
