@@ -10,7 +10,7 @@ and accomplished in this project. I also try to answer the questions provided
 by udacity.
 
 For the data exploration and preparation part, refer to
-[Enron+POI+Classifier+EDA.html](Enron+POI+Classifier+EDA.pdf) and for the model building and tuning part, refer to [Enron+POI+Classifier+Model+Building.html](Enron+POI+Classifier+Model+Building.pdf).
+[Enron+POI+Classifier+EDA.html](Enron POI Classifier EDA.pdf) and for the model building and tuning part, refer to [Enron+POI+Classifier+Model+Building.html](Enron POI Classifier Model Building.pdf).
 
 One remark regarding featured that depend on POI: If we start with a fresh
 dataset, then we cannot use these features, since they leak knowledge about
