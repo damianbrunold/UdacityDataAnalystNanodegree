@@ -2,14 +2,14 @@
 
 ## Enron+POI+Classifier+EDA.ipynb
 
-[Enron+POI+Classifier+EDA.md](Enron+POI+Classifier+EDA.md)
+[Enron POI Classifier EDA.md](Enron POI Classifier EDA.md)
 
 jupyter notebooks and markdown extract that explain how data
 exploration and cleaning was performed.
 
 ## Enron+POI+Classifier+Model+Building.ipynb
 
-[Enron+POI+Classifier+Model+Building.md](Enron+POI+Classifier+Model+Building.md)
+[Enron POI Classifier Model Building.md](Enron POI Classifier Model Building.md)
 
 jupyter notebooks and markdown extract that explain how the
 model was chosen and tuned.
