@@ -8,6 +8,8 @@ information is brought in relation to regional and world events (wars).
 In addition, the time line is annotated with information 
 about major changes to the laws regulating asylum in switzerland.
 
+https://www.damianbrunold.ch/refugees/index.html
+
 Design
 ------
 

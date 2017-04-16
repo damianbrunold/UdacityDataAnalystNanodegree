@@ -4,7 +4,7 @@
 
 contains the final model including validation code.
 
-> documentation.txt
+> documentation.md
 
 contains documentation of the work including answers to questions.
 
@@ -22,7 +22,7 @@ exploration and cleaning was performed.
 jupyter notebooks and HTML extract that explain how the
 model was chosen and tuned.
 
-> references.txt
+> references.md
 
 contains references to used materials and a declaration of
 authorship.
