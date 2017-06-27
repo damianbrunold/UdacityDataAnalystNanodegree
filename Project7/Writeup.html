@@ -1,0 +1,101 @@
+<h1>Data Visualization with Tableau Project</h1>
+
+<style>
+p { max-width:35em;}
+</style>
+
+<h2>Link to Tableau Workbooks</h2>
+<p>Link to tableau public workbook for first draft:</p>
+<p><a href="https://public.tableau.com/profile/damian.brunold#!/vizhome/EntwicklungAsylgesucheSchweiz1/Entwicklungdiskret">https://public.tableau.com/profile/damian.brunold#!/vizhome/EntwicklungAsylgesucheSchweiz1/Entwicklungdiskret</a></p>
+
+<p>Link to tableau public workbook for second draft:</p>
+<p><a href="https://public.tableau.com/profile/damian.brunold#!/vizhome/EntwicklungAsylgesucheSchweiz2/AsylgesucheinderSchweizDashboard">https://public.tableau.com/profile/damian.brunold#!/vizhome/EntwicklungAsylgesucheSchweiz2/AsylgesucheinderSchweizDashboard</a></p>
+
+<p>Link to tableau public workbook for final version:</p>
+<p><a href="https://public.tableau.com/profile/damian.brunold#!/vizhome/RefugeeCountsinSwitzerlandandWorldEvents/Refugeecountsrelatedtoworldevents">https://public.tableau.com/profile/damian.brunold#!/vizhome/RefugeeCountsinSwitzerlandandWorldEvents/Refugeecountsrelatedtoworldevents</a></p>
+
+<h2 id="summary">Summary</h2>
+<p>The visualization shows the relation between the number of refugees 
+seeking asylum in switzerland between the years 1986 and 2015 and 
+regional world events (mostly wars). The impact of various regional
+events is explored.</p>
+<h2 id="design">Design</h2>
+<p>First draft:</p>
+<ul>
+<li><p>I first tought about using a line diagram, since the data is essentially
+a time series. But since I wanted to show for each year the regional
+decomposition of refugee origin, I found that a stacked bar chart worked
+better while retaining most of the time series feel.</p>
+</li>
+<li><p>The x axis spans the years 1986 to 2016. The y axis spans from 0 to a little
+more than the maximum refugee count (i.e. 50&#39;000). </p>
+</li>
+</ul>
+<p>Second draft:</p>
+<ul>
+<li><p>The draft chart was way to hectic and colorful. Thus, I reworked the data to
+include only the top 10 origin countries for each year and I grouped these
+years into six large regions of origin (e.g. middle east, north africa, east
+africa, ...) This reduced the visual clutter substantially, while providing
+additional insight into the data. This makes sense, since most event that result
+in waves of refugees (e.g. wars) concern not only one country but rather a whole
+region.</p>
+</li>
+<li><p>Add value labels to the stacked bars</p>
+</li>
+<li><p>Order data so that &quot;Other&quot; is lowest and the other regions are consistently
+arranged.</p>
+</li>
+<li><p>Add more descriptive axis labels</p>
+</li>
+<li><p>Add more descriptive title and subtitle</p>
+</li>
+<li><p>Add information about major event in this period (regional wars)</p>
+</li>
+<li><p>Place the legend to the bottom of the dashboard</p>
+</li>
+</ul>
+
+<p>Final version</p>
+<ul>
+<li><p>I realized due to feedback from a udacity reviewer, that I was
+supposed to create a story that explained the data and not just to create
+a single visualization. This led me to rethink the whole project and I
+settled on a slightly different path.</p></li>
+<li><p>I solely use line charts. These work very well for time series
+data.</p></li>
+<li><p>I start with a line chart that shows the overall numbers. Then, in
+subsequent story panels, I focus on different regions of the world and
+explain the relation between peaks and event in the particular region.</p></li>
+<li><p>Finally, all the charts are combined in a stacked line chart. This
+chart does not have labels for the values, since it would be too cluttered.
+Also, the purpose of the chart is mainly to show the qualitative development
+of the values over time and their relation with world events.</p></li>
+<li><p>All charts share the same vertical axis, ranging from 0 to 50'000.
+This provides an immediate visual comparison of the various charts.</p></li>
+<li><p>Finally, I translated the whole visualization from german to english</p></li>
+</ul>
+
+<h2 id="feedback">Feedback</h2>
+<p>(Feedback was given orally by Nils. Nils is a colleague at work.)</p>
+<p>Feedback for first draft:</p>
+<p>Chart is too cluttered. The overall trend is visible, but it is
+difficult to see detail information.</p>
+<p>Feedback for second draft:</p>
+<p>Chart gives a good idea of the large refugee counts during the
+balkan wars.</p>
+<h2 id="resources">Resources</h2>
+<ul>
+<li>Course materials</li>
+<li>Knaflic, Storytelling with Data</li>
+<li>Staatssekretariat fuer Migration (SEM)</li>
+</ul>
+<h2 id="data-file">Data File</h2>
+
+<h3>swiss-refugees-1986-2016-english.csv:</h3>
+<ul>
+<li>Jahr: the year</li>
+<li>Land: country of origin</li>
+<li>Region: the region of origin</li>
+<li>Anzahl: the number of refugees for the given year and country</li>
+</ul>
